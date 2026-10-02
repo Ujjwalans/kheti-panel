@@ -27,14 +27,31 @@ const app = express();
 const allowedOrigins = (
   process.env.CLIENT_ORIGIN ||
   "http://localhost:5173"
-).split(",");
+)
+  .split(",")
+  .map((origin) => origin.trim());
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests without an Origin header
+      // such as server-to-server requests.
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(
+        new Error(`CORS blocked origin: ${origin}`)
+      );
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 // =========================================================
 // MIDDLEWARE
 // =========================================================
